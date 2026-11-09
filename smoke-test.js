@@ -86,10 +86,10 @@ app.on('browser-window-created', (_, window) => {
       assert.equal(await run(`document.getElementById('note').value`), '');
       const secondId = (await saved()).activeId;
       await openPages();
-      assert.equal(await run(`document.querySelector('[aria-current="page"]').textContent.trim()`), 'Empty note');
+      assert.equal(await run(`document.querySelector('[aria-current="page"] [data-page-label]').textContent.trim()`), 'Empty note');
       await input('note', 'Second page text\nMore details');
       await openPages();
-      assert.equal(await run(`document.querySelector('[aria-current="page"]').textContent.trim()`), 'Second page text');
+      assert.equal(await run(`document.querySelector('[aria-current="page"] [data-page-label]').textContent.trim()`), 'Second page text');
       await run(`(() => { const input = document.getElementById('search-pages'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'More details'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
       assert.equal(await run(`document.querySelectorAll('[data-page-id]').length`), 1);
       await run(`(() => { const input = document.getElementById('search-pages'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, ''); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
@@ -99,7 +99,7 @@ app.on('browser-window-created', (_, window) => {
       await select(secondId);
       await reload();
       await openPages();
-      assert.equal(await run(`document.querySelector('[aria-current="page"]').textContent.trim()`), 'Second page text');
+      assert.equal(await run(`document.querySelector('[aria-current="page"] [data-page-label]').textContent.trim()`), 'Second page text');
       await closePages();
       assert.equal(await run(`document.getElementById('note').value`), 'Second page text\nMore details');
       await click('delete-page');

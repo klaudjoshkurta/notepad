@@ -70,7 +70,7 @@ async function launch() {
     app = await launch();
     await app.evaluate(`(() => { const editor = document.getElementById('note'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(editor, 'Packaged persistence check'); editor.dispatchEvent(new Event('input', { bubbles: true })); })()`);
     await app.evaluate(`document.getElementById('pages-menu').click()`);
-    assert.equal(await app.evaluate(`document.querySelector('[data-page-id]').textContent.trim()`), 'Packaged persistence check');
+    assert.equal(await app.evaluate(`document.querySelector('[data-page-label]').textContent.trim()`), 'Packaged persistence check');
     const image = await app.command('Page.captureScreenshot');
     fs.writeFileSync(path.resolve('release/pages-preview.png'), Buffer.from(image.data, 'base64'));
     await app.close();

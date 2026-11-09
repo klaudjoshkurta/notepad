@@ -19,7 +19,7 @@ function createWindow() {
 		maximizable: false,
 		fullscreenable: false,
 		alwaysOnTop: true,
-		backgroundColor: '#FFF',
+		backgroundColor: '#17181b',
 		show: false,
 		webPreferences: {
 			preload: path.join(__dirname, 'preload.js'),
