@@ -1,0 +1,31 @@
+appId: com.klaudjo.notepad
+productName: Notepad
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - main.js
+  - preload.js
+  - window-state.js
+  - startup-error.html
+  - startup-error.js
+  - build/icon.svg
+  - package.json
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  createDesktopShortcut: true
+  runAfterFinish: false
+  artifactName: Notepad-Setup-${version}.${ext}
+portable:
+  artifactName: Notepad-Portable-${version}.${ext}

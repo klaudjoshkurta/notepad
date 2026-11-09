@@ -10,12 +10,16 @@
 		"start": "npm run build && electron .",
 		"build": "vite build",
 		"dev": "vite build --watch",
-		"test": "npm run build && electron smoke-test.js"
+		"package:win": "npm run build && electron-builder --win --publish never",
+		"package:dir": "npm run build && electron-builder --win --dir --publish never",
+		"test:packaged": "node scripts/packaged-smoke.cjs",
+		"test": "node --test tests/*.cjs && npm run build && electron smoke-test.js"
 	},
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.3.5",
 		"@vitejs/plugin-react": "^6.3.0",
 		"electron": "^45.2.3",
+		"electron-builder": "^26.18.0",
 		"tailwindcss": "^4.3.5",
 		"vite": "^8.3.7"
 	},
