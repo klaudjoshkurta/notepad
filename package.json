@@ -1,0 +1,31 @@
+{
+	"name": "notepad",
+	"version": "1.0.0",
+	"description": "A minimal notepad desktop application.",
+	"license": "MIT",
+	"author": "Klaudjo Shkurta",
+	"type": "commonjs",
+	"main": "main.js",
+	"scripts": {
+		"start": "npm run build && electron .",
+		"build": "vite build",
+		"dev": "vite build --watch",
+		"test": "npm run build && electron smoke-test.js"
+	},
+	"devDependencies": {
+		"@tailwindcss/vite": "^4.3.5",
+		"@vitejs/plugin-react": "^6.3.0",
+		"electron": "^45.2.3",
+		"tailwindcss": "^4.3.5",
+		"vite": "^8.3.7"
+	},
+	"dependencies": {
+		"@radix-ui/react-slot": "^1.5.0",
+		"@remixicon/react": "^4.9.0",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
+		"tailwind-merge": "^3.7.0"
+	}
+}

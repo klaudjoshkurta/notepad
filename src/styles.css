@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #222222;
+  --primary: #617658;
+  --primary-foreground: #ffffff;
+  --accent: #eaf0e3;
+  --accent-foreground: #363d37;
+  --muted-foreground: #818677;
+  --border: #e7e6dd;
+  --input: #dedfd5;
+  --ring: #6c8064;
+}
+
+@theme inline {
+  --font-sans: "Segoe UI", sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
