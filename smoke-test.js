@@ -19,42 +19,68 @@ app.on('browser-window-created', (_, window) => {
       await loaded;
       await mounted();
     };
-    const input = (id, value) => run(`(() => {
+    const openPages = async () => {
+      if (!await run(`Boolean(document.getElementById('pages-view'))`)) await run(`document.getElementById('pages-menu').click()`);
+    };
+    const closePages = async () => {
+      if (await run(`Boolean(document.getElementById('pages-view'))`)) await run(`document.getElementById('back-to-note').click()`);
+    };
+    const input = async (id, value) => {
+      await closePages();
+      return run(`(() => {
       const element = document.getElementById(${JSON.stringify(id)});
       const prototype = element.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
       Object.getOwnPropertyDescriptor(prototype, 'value').set.call(element, ${JSON.stringify(value)});
       element.dispatchEvent(new Event('input', { bubbles: true }));
     })()`);
-    const click = id => run(`document.getElementById(${JSON.stringify(id)}).click()`);
+    };
+    const click = async id => {
+      await openPages();
+      return run(`document.getElementById(${JSON.stringify(id)}).click()`);
+    };
     const saved = () => run(`JSON.parse(localStorage.getItem('notepad.pages.v1'))`);
-    const select = id => run(`(() => {
-      const select = document.getElementById('page-select');
-      select.value = ${JSON.stringify(id)};
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-    })()`);
+    const select = async id => {
+      await openPages();
+      await run(`document.querySelector('[data-page-id="${id}"]').click()`);
+      await closePages();
+    };
     try {
       assert.equal(window.isAlwaysOnTop(), true);
       assert.deepEqual(window.getSize(), [440, 620]);
       await mounted();
+      assert.equal(await run(`document.querySelector('main #page-title, main #add-page, main #delete-page')`), null);
+      await openPages();
+      assert.equal(await run(`Boolean(document.getElementById('pages-view'))`), true);
+      assert.equal(await run(`document.getElementById('note')`), null);
+      assert.equal(await run(`document.getElementById('pages-menu')`), null);
+      assert.equal(await run(`Boolean(document.getElementById('back-to-note'))`), true);
+      assert.equal(await run(`document.querySelector('[role="dialog"]')`), null);
+      await closePages();
+      assert.equal(await run(`document.activeElement.id`), 'note');
       await run(`localStorage.removeItem('notepad.pages.v1'); localStorage.setItem('notepad.note.v1', 'A saved thought');`);
       await reload();
       assert.equal(await run(`document.getElementById('note').value`), 'A saved thought');
       const firstId = (await saved()).activeId;
-      await input('page-title', 'Ideas');
       await input('note', 'First page text');
       assert.equal(await run(`document.getElementById('word-count').textContent`), '3 words');
       await click('add-page');
       assert.equal((await saved()).pages.length, 2);
       assert.equal(await run(`document.getElementById('note').value`), '');
       const secondId = (await saved()).activeId;
-      await input('page-title', 'Tasks');
-      await input('note', 'Second page text');
+      await openPages();
+      assert.equal(await run(`document.querySelector('[aria-current="page"]').textContent.trim()`), 'Empty note');
+      await input('note', 'Second page text\nMore details');
+      await openPages();
+      assert.equal(await run(`document.querySelector('[aria-current="page"]').textContent.trim()`), 'Second page text');
+      assert.equal(await run(`document.getElementById('page-title')`), null);
       await select(firstId);
       assert.equal(await run(`document.getElementById('note').value`), 'First page text');
       await select(secondId);
       await reload();
-      assert.equal(await run(`document.getElementById('page-title').value`), 'Tasks');
-      assert.equal(await run(`document.getElementById('note').value`), 'Second page text');
+      await openPages();
+      assert.equal(await run(`document.querySelector('[aria-current="page"]').textContent.trim()`), 'Second page text');
+      await closePages();
+      assert.equal(await run(`document.getElementById('note').value`), 'Second page text\nMore details');
       await click('delete-page');
       await click('cancel-delete');
       assert.equal((await saved()).pages.length, 2);
@@ -68,11 +94,12 @@ app.on('browser-window-created', (_, window) => {
       await click('delete-page');
       await click('confirm-delete');
       assert.equal((await saved()).pages.length, 1);
+      await closePages();
       assert.equal(await run(`document.getElementById('note').value`), '');
       assert.equal(await run(`typeof window.notepad.close`), 'function');
       assert.equal(await run(`typeof require`), 'undefined');
       assert.equal(BrowserWindow.getAllWindows().length, 1);
-      console.log('Passed: overlay, legacy migration, page creation, renaming, independent content, switching, reload persistence, deletion/cancel, final-page fallback, and isolated preload.');
+      console.log('Passed: separate list/editor views, menu/back navigation, editor focus, first-line previews, migration, creation, switching, persistence, deletion/cancel, always-on-top, and isolated preload.');
       clearTimeout(timeout);
       app.exit(0);
     } catch (error) {
