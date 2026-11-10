@@ -4,7 +4,7 @@ const path = require('node:path');
 const os = require('node:os');
 const assert = require('node:assert/strict');
 const releaseDirectory = path.resolve(__dirname, '../../../release');
-const executable = process.argv[2] ? path.resolve(process.argv[2]) : path.join(releaseDirectory, 'win-unpacked/Notepad.exe');
+const executable = process.argv[2] ? path.resolve(process.argv[2]) : path.join(releaseDirectory, 'win-unpacked/Digital Notepad.exe');
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'notepad-packaged-'));
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 

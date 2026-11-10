@@ -13,7 +13,7 @@ app.on('browser-window-created', (_, window) => {
     const run = script => window.webContents.executeJavaScript(script);
     const waitFor = expression => run(`new Promise((resolve, reject) => {
       const deadline = Date.now() + 5000;
-      const check = () => (${expression}) ? resolve() : Date.now() > deadline ? reject(new Error('Condition timed out')) : setTimeout(check, 20);
+      const check = () => (${expression}) ? resolve() : Date.now() > deadline ? reject(new Error('Condition timed out: ' + ${JSON.stringify(expression)})) : setTimeout(check, 20);
       check();
     })`);
     const mounted = () => run(`new Promise((resolve, reject) => {

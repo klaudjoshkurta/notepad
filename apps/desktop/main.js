@@ -3,6 +3,10 @@ const path = require('node:path');
 const fs = require('node:fs/promises');
 const { readBounds, saveBounds } = require('./window-state');
 const profileDirectory = app.commandLine.getSwitchValue('user-data-dir');
+// Keep existing notes and window state when changing the application name.
+if (!profileDirectory && app.getPath('userData') === path.join(app.getPath('appData'), app.getName())) {
+	app.setPath('userData', path.join(app.getPath('appData'), 'notepad'));
+}
 if (profileDirectory) {
 	require('node:fs').mkdirSync(profileDirectory, { recursive: true });
 	app.setPath('userData', profileDirectory);
@@ -14,7 +18,7 @@ function createWindow() {
 		...readBounds(app.getPath('userData'), screen.getAllDisplays()),
 		minWidth: 280,
 		minHeight: 320,
-		title: 'Notepad',
+		title: 'Digital Notepad',
 		frame: false,
 		maximizable: false,
 		fullscreenable: false,
@@ -41,7 +45,7 @@ function createWindow() {
 	for (const event of ['move', 'resize']) mainWindow.on(event, () => { clearTimeout(boundsTimer); boundsTimer = setTimeout(remember, 300); });
 	mainWindow.on('close', () => { clearTimeout(boundsTimer); remember(); });
 	const showFailure = () => {
-		mainWindow.loadFile(path.join(__dirname, 'startup-error.html')).catch(error => dialog.showErrorBox('Notepad could not start', error.message));
+		mainWindow.loadFile(path.join(__dirname, 'startup-error.html')).catch(error => dialog.showErrorBox('Digital Notepad could not start', error.message));
 		mainWindow.show();
 	};
 	mainWindow.webContents.on('render-process-gone', showFailure);
@@ -52,7 +56,7 @@ function createWindow() {
 ipcMain.handle('notes:export', async (event, { text, kind } = {}) => {
 	if (event.sender !== mainWindow?.webContents || typeof text !== 'string') throw new Error('Invalid export');
 	const json = kind === 'json';
-	const result = await dialog.showSaveDialog(mainWindow, { defaultPath: json ? 'notepad-backup.json' : 'note.txt', filters: [{ name: json ? 'Notebook backup' : 'Text file', extensions: [json ? 'json' : 'txt'] }] });
+	const result = await dialog.showSaveDialog(mainWindow, { defaultPath: json ? 'digital-notepad-backup.json' : 'note.txt', filters: [{ name: json ? 'Notebook backup' : 'Text file', extensions: [json ? 'json' : 'txt'] }] });
 	if (result.canceled) return false;
 	await fs.writeFile(result.filePath, text, 'utf8');
 	return true;
@@ -65,7 +69,7 @@ ipcMain.handle('notes:import', async event => {
 	return fs.readFile(result.filePaths[0], 'utf8');
 });
 ipcMain.on('app:retry', event => {
-	if (event.sender === mainWindow?.webContents) mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html')).catch(error => dialog.showErrorBox('Notepad could not start', error.message));
+	if (event.sender === mainWindow?.webContents) mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html')).catch(error => dialog.showErrorBox('Digital Notepad could not start', error.message));
 });
 
 ipcMain.on('window:minimize', (event) => {

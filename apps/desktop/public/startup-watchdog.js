@@ -6,7 +6,7 @@ function showStartupError() {
   message.id = 'startup-failure';
   message.className = 'p-6 text-sm';
   const heading = document.createElement('h1');
-  heading.textContent = 'Notepad could not start';
+  heading.textContent = 'Digital Notepad could not start';
   const detail = document.createElement('p');
   detail.textContent = 'Your saved notes have not been changed.';
   const retry = document.createElement('button');

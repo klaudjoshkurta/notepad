@@ -1,19 +1,23 @@
 {
-  "name": "notepad-workspace",
+  "name": "digital-notepad-workspace",
   "private": true,
   "packageManager": "pnpm@11.25.0",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "start": "turbo run start",
+    "start": "turbo run start --filter=digital-notepad",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "test": "turbo run test",
     "package:win": "turbo run package:win",
     "package:dir": "turbo run package:dir",
     "test:packaged": "turbo run test:packaged",
-    "preview": "turbo run preview"
+    "preview": "turbo run preview",
+    "dev:web": "turbo run dev --filter=@digital-notepad/web",
+    "build:web": "turbo run build --filter=@digital-notepad/web",
+    "start:web": "turbo run start --filter=@digital-notepad/web",
+    "dev:desktop": "turbo run dev --filter=digital-notepad"
   },
   "devDependencies": {
     "turbo": "2.11.10"

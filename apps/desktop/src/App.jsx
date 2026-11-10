@@ -26,6 +26,7 @@ export default function App() {
 	const editors = useRef(new Map());
 	const scrollPositions = useRef(new Map());
 	const searchInput = useRef(null);
+	const menuFocusTarget = useRef(null);
 	const note = notebook.pages.find(page => page.id === notebook.activeId);
 	const words = note.text.trim() ? note.text.trim().split(/\s+/u).length : 0;
 
@@ -69,6 +70,13 @@ export default function App() {
 		return () => window.removeEventListener('keydown', onKey);
 	});
 
+	function restoreMenuFocus(event) {
+		event.preventDefault();
+		const target = menuFocusTarget.current;
+		menuFocusTarget.current = null;
+		if (target === 'find') searchInput.current?.focus();
+		else if (target !== 'shortcuts' && !shortcutsOpen) editors.current.get(note.id)?.focus({ preventScroll: true });
+	}
 	function updateNotebook(next) { setNotebook(savePages(next)); }
 	async function exportNotes(kind = 'json', raw = false) {
 		try {
@@ -84,7 +92,7 @@ export default function App() {
 			const pages = imported.pages.map(page => createPage(page.text));
 			setNotebook(savePages({ ...notebook, pages: [...notebook.pages, ...pages], activeId: pages[0].id }, { recover: true }));
 			setMessage('Backup imported as additional pages.');
-		} catch { setMessage('Could not import this backup. Choose a valid Notepad JSON backup.'); }
+		} catch { setMessage('Could not import this backup. Choose a valid Digital Notepad JSON backup.'); }
 	}
 	function recoverBackup() {
 		try { setNotebook(restoreBackup()); setMessage('Backup restored.'); }
@@ -138,7 +146,7 @@ export default function App() {
 		<div id="app-ready" className="flex h-dvh flex-col overflow-hidden border border-border bg-background text-foreground antialiased">
 			<header className="desktop-titlebar">
 				<Menubar.Root className="desktop-menubar" value={menu} onValueChange={setMenu} aria-label="Application menu">
-					<Menubar.Menu value="file"><Menubar.Trigger id="file-menu">File</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={event => { event.preventDefault(); if (!shortcutsOpen) editors.current.get(note.id)?.focus({ preventScroll: true }); }} align="start" sideOffset={4}>
+					<Menubar.Menu value="file"><Menubar.Trigger id="file-menu">File</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={restoreMenuFocus} align="start" sideOffset={4}>
 
 						<Menubar.Item id="import-notebook" onSelect={importNotes}>Import backup…</Menubar.Item>
 						<Menubar.Item id="export-note" onSelect={() => exportNotes('txt')}>Export page…<span>Ctrl+E</span></Menubar.Item>
@@ -149,7 +157,7 @@ export default function App() {
 						<Menubar.Separator />
 						<Menubar.Item onSelect={() => window.notepad.close()}>Close</Menubar.Item>
 					</Menubar.Content></Menubar.Portal></Menubar.Menu>
-					<Menubar.Menu value="edit"><Menubar.Trigger id="edit-menu">Edit</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={event => { event.preventDefault(); if (!shortcutsOpen) editors.current.get(note.id)?.focus({ preventScroll: true }); }} align="start" sideOffset={4}>
+					<Menubar.Menu value="edit"><Menubar.Trigger id="edit-menu">Edit</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={restoreMenuFocus} align="start" sideOffset={4}>
 						<Menubar.Item onSelect={() => edit('undo')}>Undo<span>Ctrl+Z</span></Menubar.Item>
 						<Menubar.Item onSelect={() => edit('redo')}>Redo<span>Ctrl+Y</span></Menubar.Item>
 						<Menubar.Separator />
@@ -158,10 +166,10 @@ export default function App() {
 						<Menubar.Item onSelect={() => edit('paste')}>Paste<span>Ctrl+V</span></Menubar.Item>
 						<Menubar.Item onSelect={() => edit('selectAll')}>Select all<span>Ctrl+A</span></Menubar.Item>
 						<Menubar.Separator />
-						<Menubar.Item id="find-menu-item" onSelect={() => { setFindOpen(true); requestAnimationFrame(() => searchInput.current?.focus()); }}>Find…<span>Ctrl+F</span></Menubar.Item>
+						<Menubar.Item id="find-menu-item" onSelect={() => { menuFocusTarget.current = 'find'; setFindOpen(true); }}>Find…<span>Ctrl+F</span></Menubar.Item>
 						<Menubar.Item id="undo-delete" disabled={!notebook.trash?.length} onSelect={undoDelete}>Restore deleted page</Menubar.Item>
 					</Menubar.Content></Menubar.Portal></Menubar.Menu>
-					<Menubar.Menu value="pages"><Menubar.Trigger id="pages-menu">Pages</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={event => { event.preventDefault(); if (!shortcutsOpen) editors.current.get(note.id)?.focus({ preventScroll: true }); }} align="start" sideOffset={4}>
+					<Menubar.Menu value="pages"><Menubar.Trigger id="pages-menu">Pages</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={restoreMenuFocus} align="start" sideOffset={4}>
 
 						<Menubar.Item id="add-page" onSelect={addPage}>New page<span>Ctrl+N</span></Menubar.Item>
 						<Menubar.Separator />
@@ -169,11 +177,11 @@ export default function App() {
 							{notebook.pages.map((page, index) => <Menubar.RadioItem key={page.id} data-page-id={page.id} value={page.id} aria-current={page.id === note.id ? 'page' : undefined}><span className="menu-check"><Menubar.ItemIndicator>✓</Menubar.ItemIndicator></span><span data-page-label className="menu-page-label">{page.text.split(/\r\n|\r|\n/u, 1)[0].trim() || 'Empty note'}</span></Menubar.RadioItem>)}
 						</Menubar.RadioGroup>
 					</Menubar.Content></Menubar.Portal></Menubar.Menu>
-					<Menubar.Menu value="settings"><Menubar.Trigger id="settings-menu">Settings</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={event => { event.preventDefault(); if (!shortcutsOpen) editors.current.get(note.id)?.focus({ preventScroll: true }); }} align="start" sideOffset={4}>
+					<Menubar.Menu value="settings"><Menubar.Trigger id="settings-menu">Settings</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={restoreMenuFocus} align="start" sideOffset={4}>
 						<Menubar.Item id="theme-toggle" onSelect={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>Switch to {theme === 'dark' ? 'light' : 'dark'} mode</Menubar.Item>
 					</Menubar.Content></Menubar.Portal></Menubar.Menu>
-					<Menubar.Menu value="help"><Menubar.Trigger id="help-menu">Help</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={event => { event.preventDefault(); if (!shortcutsOpen) editors.current.get(note.id)?.focus({ preventScroll: true }); }} align="start" sideOffset={4}>
-						<Menubar.Item id="shortcuts-menu-item" onSelect={() => { const editor = editors.current.get(note.id); if (editor && !shortcutsOpen) scrollPositions.current.set(note.id, editor.scrollTop); setFindOpen(false); setShortcutsOpen(true); }}>Keyboard shortcuts</Menubar.Item>
+					<Menubar.Menu value="help"><Menubar.Trigger id="help-menu">Help</Menubar.Trigger><Menubar.Portal><Menubar.Content className="desktop-menu" onCloseAutoFocus={restoreMenuFocus} align="start" sideOffset={4}>
+						<Menubar.Item id="shortcuts-menu-item" onSelect={() => { menuFocusTarget.current = 'shortcuts'; const editor = editors.current.get(note.id); if (editor && !shortcutsOpen) scrollPositions.current.set(note.id, editor.scrollTop); setFindOpen(false); setShortcutsOpen(true); }}>Keyboard shortcuts</Menubar.Item>
 					</Menubar.Content></Menubar.Portal></Menubar.Menu>
 				</Menubar.Root>
 				<div className="window-controls">

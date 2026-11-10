@@ -1,5 +1,5 @@
 appId: com.klaudjo.notepad
-productName: Notepad
+productName: Digital Notepad
 # Match the lockfile: electron-builder cannot infer this from hoisted dependencies.
 electronVersion: 45.2.3
 directories:
@@ -28,6 +28,6 @@ nsis:
   deleteAppDataOnUninstall: false
   createDesktopShortcut: true
   runAfterFinish: false
-  artifactName: Notepad-Setup-${version}.${ext}
+  artifactName: Digital Notepad-Setup-${version}.${ext}
 portable:
-  artifactName: Notepad-Portable-${version}.${ext}
+  artifactName: Digital Notepad-Portable-${version}.${ext}

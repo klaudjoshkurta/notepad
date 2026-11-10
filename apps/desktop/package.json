@@ -1,7 +1,7 @@
 {
-  "name": "notepad",
+  "name": "digital-notepad",
   "version": "1.0.0",
-  "description": "A minimal notepad desktop application.",
+  "description": "Digital Notepad — a minimal desktop notepad.",
   "license": "MIT",
   "author": "Klaudjo Shkurta",
   "type": "commonjs",
