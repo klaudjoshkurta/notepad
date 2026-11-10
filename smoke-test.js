@@ -21,17 +21,26 @@ app.on('browser-window-created', (_, window) => {
       const check = () => document.getElementById('note') ? resolve() : Date.now() > deadline ? reject(new Error('React did not mount')) : setTimeout(check, 20);
       check();
     })`);
+      const checkTypography = async () => {
+        assert.equal(await run(`document.fonts.check('16px "Inter Variable"')`), true);
+        assert.deepEqual(await run(`Array.from(document.querySelectorAll('#app-ready *, .desktop-menu *')).filter(element => element.getClientRects().length && Array.from(element.childNodes).some(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim())).filter(element => parseFloat(getComputedStyle(element).fontSize) < (element.closest('.desktop-menu, .desktop-menubar, footer, kbd') ? 14 : 16) || !getComputedStyle(element).fontFamily.includes('Inter Variable')).map(element => element.outerHTML)`), []);
+        assert.equal(await run(`getComputedStyle(document.getElementById('note')).fontFamily.includes('Inter Variable')`), true);
+        assert.equal(await run(`document.documentElement.scrollWidth > innerWidth`), false);
+      };
     const reload = async () => {
       const loaded = new Promise(resolve => window.webContents.once('did-finish-load', resolve));
       window.webContents.reload();
       await loaded;
       await mounted();
+
     };
-    const openPages = async () => {
-      if (!await run(`Boolean(document.getElementById('pages-view'))`)) await run(`document.getElementById('pages-menu').click()`);
+    const openMenu = async name => {
+      await run(`(() => { const trigger = document.getElementById('${name}-menu'); if (trigger.dataset.state !== 'open') { trigger.focus(); trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); } })()`);
+      await waitFor(`document.getElementById('${name}-menu').dataset.state === 'open'`);
     };
+    const openPages = () => openMenu('pages');
     const closePages = async () => {
-      if (await run(`Boolean(document.getElementById('pages-view'))`)) await run(`document.getElementById('back-to-note').click()`);
+      await run(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); document.getElementById('note').focus({ preventScroll: true })`);
     };
     const input = async (id, value) => {
       await closePages();
@@ -43,7 +52,7 @@ app.on('browser-window-created', (_, window) => {
     })()`);
     };
     const click = async id => {
-      await openPages();
+      if (!['confirm-delete', 'cancel-delete', 'confirm-restore'].includes(id)) await openMenu(id === 'add-page' ? 'pages' : id === 'shortcuts-menu-item' ? 'help' : id === 'theme-toggle' ? 'settings' : ['undo-delete', 'find-menu-item'].includes(id) ? 'edit' : 'file');
       return run(`document.getElementById(${JSON.stringify(id)}).click()`);
     };
     const saved = () => run(`JSON.parse(localStorage.getItem('notepad.pages.v1'))`);
@@ -56,18 +65,25 @@ app.on('browser-window-created', (_, window) => {
       assert.equal(window.isAlwaysOnTop(), true);
       assert.deepEqual(window.getSize(), [440, 620]);
       await mounted();
+      await run(`document.fonts.ready`);
+      await checkTypography();
+      const initialTheme = await run(`document.documentElement.dataset.theme`);
+      assert.ok(['light', 'dark'].includes(initialTheme));
+      await click('theme-toggle');
+      await waitFor(`document.documentElement.dataset.theme !== ${JSON.stringify(initialTheme)}`);
+      const selectedTheme = await run(`document.documentElement.dataset.theme`);
+      await checkTypography();
+      assert.equal(await run(`localStorage.getItem('notepad.theme')`), selectedTheme);
+      await reload();
+      assert.equal(await run(`document.documentElement.dataset.theme`), selectedTheme);
+      await click('theme-toggle');
+      await waitFor(`document.documentElement.dataset.theme === ${JSON.stringify(initialTheme)}`);
       assert.equal(await run(`document.querySelector('main #page-title, main #add-page, main #delete-page')`), null);
       await openPages();
-      assert.equal(await run(`Boolean(document.getElementById('pages-view'))`), true);
-      assert.equal(await run(`getComputedStyle(document.getElementById('editor-view')).display`), 'none');
-      assert.equal(await run(`document.getElementById('pages-menu')`), null);
-      assert.equal(await run(`Boolean(document.getElementById('back-to-note'))`), true);
-      assert.equal(await run(`document.querySelector('[role="dialog"]')`), null);
+      await checkTypography();
+      assert.equal(await run(`document.getElementById('pages-view')`), null);
+      assert.equal(await run(`getComputedStyle(document.getElementById('editor-view')).display`), 'flex');
       await closePages();
-      assert.equal(await run(`document.activeElement.id`), 'note');
-      await openPages();
-      await run(`document.getElementById('back-to-note').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
-      assert.equal(await run(`Boolean(document.getElementById('pages-view'))`), false);
       await run(`localStorage.removeItem('notepad.pages.v1'); localStorage.setItem('notepad.note.v1', 'A saved thought');`);
       await reload();
       assert.equal(await run(`document.getElementById('note').value`), 'A saved thought');
@@ -88,12 +104,14 @@ app.on('browser-window-created', (_, window) => {
       await openPages();
       assert.equal(await run(`document.querySelector('[aria-current="page"] [data-page-label]').textContent.trim()`), 'Empty note');
       await input('note', 'Second page text\nMore details');
+      await click('find-menu-item');
+      await waitFor(`document.activeElement.id === 'find-input'`);
+      await run(`(() => { const input = document.getElementById('find-input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'More details'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+      await run(`document.querySelector('.find-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))`);
+      assert.equal(await run(`document.getElementById('note').value.substring(document.getElementById('note').selectionStart, document.getElementById('note').selectionEnd)`), 'More details');
+      await closePages();
       await openPages();
       assert.equal(await run(`document.querySelector('[aria-current="page"] [data-page-label]').textContent.trim()`), 'Second page text');
-      await run(`(() => { const input = document.getElementById('search-pages'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'More details'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
-      assert.equal(await run(`document.querySelectorAll('[data-page-id]').length`), 1);
-      await run(`(() => { const input = document.getElementById('search-pages'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, ''); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
-      assert.equal(await run(`document.getElementById('page-title')`), null);
       await select(firstId);
       assert.equal(await run(`document.getElementById('note').value`), 'First page text');
       await select(secondId);
@@ -127,7 +145,7 @@ app.on('browser-window-created', (_, window) => {
       await run(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', ctrlKey: true, bubbles: true }))`);
       assert.equal((await saved()).pages.length, 2);
       await run(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, bubbles: true }))`);
-      await waitFor(`document.activeElement.id === 'search-pages'`);
+      await waitFor(`document.activeElement.id === 'find-input'`);
       await closePages();
       await input('note', Array.from({ length: 100 }, (_, index) => 'Line ' + index).join('\n'));
       await run(`document.getElementById('note').setSelectionRange(8, 8); document.getElementById('note').scrollTop = 180`);
@@ -136,6 +154,23 @@ app.on('browser-window-created', (_, window) => {
       await closePages();
       assert.equal(await run(`document.getElementById('note').scrollTop`), scrollBefore);
       assert.equal(await run(`document.getElementById('note').selectionStart`), 8);
+      await click('shortcuts-menu-item');
+      await waitFor(`document.activeElement.id === 'shortcut-search'`);
+      assert.equal(await run(`getComputedStyle(document.getElementById('editor-view')).display`), 'none');
+      assert.equal(await run(`document.querySelectorAll('.shortcut-row').length`), 17);
+      await checkTypography();
+      await run(`(() => { const input = document.getElementById('shortcut-search'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'export'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+      assert.equal(await run(`document.querySelectorAll('.shortcut-row').length`), 2);
+      await run(`(() => { const input = document.getElementById('shortcut-search'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'no-such-command'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+      assert.equal(await run(`document.querySelector('.shortcuts-empty').textContent`), 'No shortcuts found.');
+      await run(`document.getElementById('back-to-editor').click()`);
+      await waitFor(`document.activeElement.id === 'note'`);
+      assert.equal(await run(`document.getElementById('note').scrollTop`), scrollBefore);
+      assert.equal(await run(`document.getElementById('note').selectionStart`), 8);
+      assert.equal(await run(`getComputedStyle(document.querySelector('footer')).fontSize`), '14px');
+      await openPages();
+      assert.equal(await run(`getComputedStyle(document.getElementById('add-page')).fontSize`), '14px');
+      await closePages();
       await click('export-notebook');
       await waitFor(`document.body.textContent.includes('Exported successfully.')`);
       const exported = JSON.parse(fs.readFileSync(exportPath, 'utf8'));
