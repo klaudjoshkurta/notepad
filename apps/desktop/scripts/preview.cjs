@@ -17,12 +17,13 @@ app.on('browser-window-created', (_, window) => {
       window.webContents.reload();
       await loaded;
       await window.webContents.executeJavaScript(`new Promise(resolve => { const check = () => document.getElementById('note') ? resolve() : setTimeout(check, 20); check(); })`);
-      fs.mkdirSync(path.join(__dirname, '../release'), { recursive: true });
+      fs.mkdirSync(path.join(__dirname, '../../../release'), { recursive: true });
       for (const [name, width, height] of [['editor', 440, 620], ['pages', 440, 620], ['compact', 280, 320]]) {
         window.setSize(width, height);
-        if (name === 'pages') await window.webContents.executeJavaScript(`document.getElementById('pages-menu').click(); document.activeElement.blur()`);
+        if (name === 'compact') await window.webContents.executeJavaScript(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+        if (name === 'pages') await window.webContents.executeJavaScript(`(() => { const trigger = document.getElementById('pages-menu'); trigger.focus(); trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); })()`);
         await new Promise(resolve => setTimeout(resolve, 200));
-        fs.writeFileSync(path.join(__dirname, `../release/redesign-${name}.png`), (await window.webContents.capturePage()).toPNG());
+        fs.writeFileSync(path.join(__dirname, `../../../release/redesign-${name}.png`), (await window.webContents.capturePage()).toPNG());
       }
       clearTimeout(timeout);
       app.exit(0);

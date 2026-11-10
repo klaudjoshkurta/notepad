@@ -1,7 +1,9 @@
 appId: com.klaudjo.notepad
 productName: Notepad
+# Match the lockfile: electron-builder cannot infer this from hoisted dependencies.
+electronVersion: 45.2.3
 directories:
-  output: release
+  output: ../../release
   buildResources: build
 files:
   - dist/**/*

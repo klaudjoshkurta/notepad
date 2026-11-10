@@ -3,7 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const assert = require('node:assert/strict');
-const executable = path.resolve(process.argv[2] || 'release/win-unpacked/Notepad.exe');
+const releaseDirectory = path.resolve(__dirname, '../../../release');
+const executable = process.argv[2] ? path.resolve(process.argv[2]) : path.join(releaseDirectory, 'win-unpacked/Notepad.exe');
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'notepad-packaged-'));
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -69,10 +70,10 @@ async function launch() {
   try {
     app = await launch();
     await app.evaluate(`(() => { const editor = document.getElementById('note'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(editor, 'Packaged persistence check'); editor.dispatchEvent(new Event('input', { bubbles: true })); })()`);
-    await app.evaluate(`document.getElementById('pages-menu').click()`);
+    await app.evaluate(`(() => { const trigger = document.getElementById('pages-menu'); trigger.focus(); trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); })()`);
     assert.equal(await app.evaluate(`document.querySelector('[data-page-label]').textContent.trim()`), 'Packaged persistence check');
     const image = await app.command('Page.captureScreenshot');
-    fs.writeFileSync(path.resolve('release/pages-preview.png'), Buffer.from(image.data, 'base64'));
+    fs.writeFileSync(path.join(releaseDirectory, 'pages-preview.png'), Buffer.from(image.data, 'base64'));
     await app.close();
     app = await launch();
     assert.equal(await app.evaluate(`document.getElementById('note').value`), 'Packaged persistence check');

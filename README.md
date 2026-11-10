@@ -1,50 +1,73 @@
 # Notepad
 
-A minimal always-on-top Windows notepad built with Electron, React, Tailwind, shadcn/ui, Remix icons, and locally bundled Inter. The window starts at 440 × 620 logical pixels and remembers its size and position. If a monitor is disconnected, the window returns to a visible display.
+A minimal always-on-top Windows notepad built with Electron, React, Tailwind, shadcn/ui, Remix icons, and locally bundled Inter. The app starts at 440 × 620 logical pixels and remembers its window position.
 
-## Use
+## Workspace
 
-Run `npm install` and `npm start`, or use the Windows builds in `release/`:
+This repository uses pnpm 11.25.0 and Turborepo. Install Node.js 22.12 or newer and the pinned pnpm version, then run commands from the repository root:
 
-- `Notepad-Setup-1.0.0.exe`: per-user installer, with an optional desktop shortcut.
-- `Notepad-Portable-1.0.0.exe`: runs without installation. Notes still live in the Windows user profile, not beside the executable.
+```powershell
+npm install --global pnpm@11.25.0
+pnpm install --frozen-lockfile
+pnpm start
+```
 
-The builds are unsigned. Installer execution, shortcuts, and uninstall behavior have not been exercised automatically.
+- `apps/desktop/`: complete Electron application, renderer, assets, configuration, scripts, and tests. The workspace package remains named `notepad`.
+- `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, and `turbo.json`: workspace dependencies and task orchestration.
+- `release/`: Windows artifacts and generated previews, excluded from Git.
 
-Open the menu to see the pages list. Select a page or create a new one to open the editor. The back arrow returns to the current note. Labels come from each note's first line. Search matches the entire note, ignoring case. Cursor, scroll position, and native undo history survive page/list navigation during the current session.
+There are no shared packages yet. Application dependencies belong in `apps/desktop/package.json`; workspace tooling belongs in the root package. Use `pnpm --filter notepad add <package>` to add an app dependency. Commit the root pnpm lockfile; do not create npm lockfiles.
 
-Delete selected page asks for confirmation. Restore last deleted page recovers the most recent deletion; up to 20 deletions survive app restarts. Deleting the last live page leaves a blank note.
+pnpm uses hoisted dependencies for Electron packaging. When upgrading Electron, update the explicit electronVersion in apps/desktop/electron-builder.yml to match the lockfile. Dependency install scripts are explicitly allowed in the workspace configuration. Exact version exceptions to pnpm's release-age policy preserve dependencies already present in the former npm lockfile.
 
-## Saving and recovery
+## Commands
 
-Notes and deleted pages save locally, with a previous-save backup. Existing single notes and older multi-page storage remain readable. In the pages list, open **Backup and files** to export the notebook as JSON, export the selected note as text, import a JSON backup, or restore the previous saved backup.
+| Command | Behavior |
+| --- | --- |
+| `pnpm build` | Build the renderer into `apps/desktop/dist/`, with Turbo caching |
+| `pnpm dev` | Watch and rebuild the renderer |
+| `pnpm start` | Build and launch Electron |
+| `pnpm test` | Build, run reliability tests, and run real Electron regressions |
+| `pnpm package:win` | Build unsigned Windows x64 installer and portable executable |
+| `pnpm package:dir` | Build the unpacked Windows app |
+| `pnpm test:packaged` | Build the unpacked app and verify it across process restarts |
+| `pnpm preview` | Build and generate isolated editor/menu screenshots |
 
-Import adds copies of the backup's live pages without replacing current notes. Restore backup replaces the current notebook after confirmation. Export first to retain unsaved changes. If stored data is unreadable, the app preserves it and offers recovery and export; explicitly saving replacement pages archives the unreadable data. A failed save keeps the draft in memory, displays an error, and prompts before closing. Export a copy before quitting.
+Turbo supplies prerequisite builds once. Only renderer build outputs are cached; Electron tests, packaging, previews, and app launches always execute. Remote caching is not configured.
 
-Local notes use Electron's `userData` directory (normally `%APPDATA%/notepad` on Windows). Window geometry is stored there in `window-state.json`. An explicit `--user-data-dir=<directory>` selects a separate profile for testing. Notes do not sync between computers.
+For development, run `pnpm dev` in one terminal and `pnpm --filter notepad exec electron .` in another. Reload Electron after renderer changes; restart it after main-process changes. The watcher does not provide live reload. Direct workspace commands bypass Turbo prerequisites, so use root commands for tests and packaging.
+
+## Using the app
+
+Use **Pages** to create or switch pages. **File** contains import, export, backup restoration, and deletion. **Settings** switches between light and dark modes. **Help → Keyboard shortcuts** opens a searchable shortcut reference. **Edit → Find** searches the current page. Native undo, selection, and scrolling are preserved while navigating.
+
+Notes save locally with a previous-save backup. Import adds live pages without replacing existing notes. Restore backup replaces the notebook after confirmation; export first to keep a copy. Deleting a page asks for confirmation, and up to 20 deleted pages can be restored across restarts. Deleting the last page leaves a blank note.
+
+Unreadable storage is preserved for recovery and export. A failed save keeps the draft in memory and prompts before closing. Existing single-note and multi-page data remain readable.
+
+Local notes use Electron's `userData` directory, normally `%APPDATA%/notepad` on Windows; window bounds live there in `window-state.json`. The workspace migration preserves the app name, application ID, and storage keys. An explicit `--user-data-dir=<directory>` selects an isolated testing profile. Notes do not sync between computers.
 
 ## Shortcuts
 
 | Shortcut | Action |
 | --- | --- |
-| Ctrl+N | New note |
-| Ctrl+Shift+P | Switch between editor and pages list |
-| Ctrl+F | Search notes |
-| Escape | Return from the pages list |
-| Ctrl+E | Export selected note as text |
-| Ctrl+Shift+E | Export all notes as JSON |
-| Ctrl+Shift+T | Restore last deleted note |
+| Ctrl+N | New page |
+| Ctrl+Shift+P | Open the Pages menu |
+| Ctrl+F | Find in the current page |
+| Ctrl+E | Export the current page as text |
+| Ctrl+Shift+E | Export all pages as JSON |
+| Ctrl+Shift+T | Restore the last deleted page |
 | Ctrl+Z / Ctrl+Y | Native undo / redo |
+| Escape | Close a menu, Find, or the shortcuts view |
 
-## Development and verification
+## Windows distribution
 
-- `npm run build`: production React build.
-- `npm run dev`: rebuild on changes; run `npx electron .` separately and reload after changes.
-- `npm test`: storage and window-bound tests plus real Electron regression checks with an isolated profile and stubbed native file pickers.
-- `npm run package:win`: build Windows x64 installer and portable executable without publishing.
-- `npm run package:dir`: build the unpacked app only.
-- `npm run test:packaged`: launch the unpacked Windows app twice with an isolated profile and verify UI, navigation, persistence, and window-state saving.
+Artifacts stay in the root `release/` directory:
 
-The packaging tools currently report six moderate development-only advisories through their minimatch dependency. The suggested automatic fix downgrades electron-builder; it has not been applied. The packaging tool is not included in the shipped app.
+- `Notepad-Setup-1.0.0.exe`: per-user installer with an optional desktop shortcut.
+- `Notepad-Portable-1.0.0.exe`: runs without installation; notes still live in the Windows user profile.
+- `win-unpacked/Notepad.exe`: unpacked app used by packaged smoke tests.
 
-The window stays above ordinary apps. Windows security prompts and exclusive fullscreen apps can appear above it. Renderer startup failures show a retry screen; saved notes remain untouched.
+Builds are unsigned. Automated checks cover unpacked and portable execution; installer execution, shortcut creation, and uninstall behavior are not automatically verified. Packaging does not publish releases.
+
+The app remains above ordinary windows; Windows security prompts and exclusive fullscreen apps can appear above it. Renderer startup failures show a retry screen without changing saved notes.
