@@ -19,6 +19,7 @@ function createWindow() {
 		minWidth: 280,
 		minHeight: 320,
 		title: 'Digital Notepad',
+		icon: path.join(__dirname, 'build', 'icon.png'),
 		frame: false,
 		maximizable: false,
 		fullscreenable: false,

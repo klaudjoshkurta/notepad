@@ -13,9 +13,12 @@ files:
   - startup-error.html
   - startup-error.js
   - build/icon.svg
+  - build/icon.png
+  - build/icon.ico
   - package.json
 asar: true
 win:
+  icon: build/icon.ico
   target:
     - target: nsis
       arch: [x64]
