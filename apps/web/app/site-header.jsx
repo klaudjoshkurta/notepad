@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { HeaderLogo } from './header-logo';
 import { useEffect, useState } from 'react';
 
 export function SiteHeader() {
@@ -15,7 +16,7 @@ export function SiteHeader() {
 
   return <header className={`site-header${scrolled ? ' is-scrolled' : ''}`}>
     <div className="header-inner">
-      <Link className="brand" href="/" aria-label="Digital Notepad home"><img src="/logo.svg" width="32" height="32" alt="" />Digital Notepad</Link>
+      <Link className="brand" href="/" aria-label="Digital Notepad home"><HeaderLogo /></Link>
       <nav aria-label="Main navigation">
         <a className="section-link" href="#steps">How it works</a>
         <a className="section-link" href="#features">Features</a>

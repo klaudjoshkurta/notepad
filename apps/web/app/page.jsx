@@ -4,7 +4,7 @@ import { SiteHeader } from './site-header';
 import { repository, releasesUrl } from '../lib/downloads.mjs';
 
 function Mark() {
-  return <img src="/logo.svg" width="32" height="32" alt="" aria-hidden="true" />;
+  return <img src="/logo.svg" width="44" height="44" alt="" aria-hidden="true" />;
 }
 
 export default function Home() {
@@ -53,7 +53,7 @@ export default function Home() {
       </section>
       <section className="closing wrap" aria-labelledby="closing-title"><div><h2 id="closing-title">Your next idea starts here.</h2><p>Open a page. Make a little room.</p></div><Link className="button button-dark" href="/download">Get Digital Notepad <span aria-hidden="true">↓</span></Link></section>
     </main>
-    <footer className="site-footer wrap"><Link className="brand" href="/"><Mark />Digital Notepad</Link><span>A little space for thought.</span><div><a href={releasesUrl}>Releases ↗</a><a href={repository}>GitHub ↗</a></div></footer>
+    <footer className="site-footer wrap"><Link className="brand" href="/" aria-label="Digital Notepad home"><Mark /></Link><span>A little space for thought.</span><div><a href={releasesUrl}>Releases ↗</a><a href={repository}>GitHub ↗</a></div></footer>
   </>;
 }
 
